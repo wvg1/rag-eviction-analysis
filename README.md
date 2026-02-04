@@ -1,32 +1,116 @@
-﻿# Using retrieval-augmented generation (RAG) to analyze eviction case outcomes
+# Multimodal RAG Pipeline for Extracting Eviction Case Outcomes from Court Documents
 
-This repo contains code that extracts and processes all text from approximately 195,000 PDF documents filed in eviction cases in Pierce County, Washington between 2022-2024 to create novel measures of several important outcomes in eviction proceedings. In order to run this code, you will need to have access to the Microsoft Azure portal and enough account credits to run the OCR and the LLM analysis. There are four main stages in the pipeline: text extraction, document identification, LLM variable estimation, and data analysis.
+## Project Summary
+
+This project builds a scalable retrieval-augmented generation (RAG) pipeline to extract structured behavioral and legal outcome measures from unstructured eviction court documents.
+
+The pipeline processes approximately **195,000 PDFs across 8,000+ eviction cases** filed in Pierce County, Washington (2022–2024). These documents contain critical information about tenant behavior, legal representation, procedural events, and case outcomes that are not captured in administrative datasets.
+
+The system combines:
+
+- Cloud-based OCR for large-scale document digitization  
+- Rule-based document classification  
+- Large language model (LLM) extraction of legal and behavioral variables  
+- Structured data integration for statistical modeling  
+
+This project demonstrates how multimodal machine learning pipelines can expand measurement capabilities in complex administrative and legal systems.
+
+---
+
+## Pipeline Overview
+
+There are four main stages in the pipeline:
+
+1. Text extraction (OCR)
+2. Document identification and classification
+3. LLM variable estimation
+4. Data integration and analysis
+
+---
 
 ## Setup
-Create .env file and fill in your Azure credentials.
 
-## OCR text extraction
-These scripts use a pre-built OCR model in the Azure portal to extract text from all of the documents in our dataset. If necessary, rerun_ocr.R can be used 
+Requires Azure credentials for OCR and LLM inference.
 
-Scripts (in /scripts): test_ocr.py, rerun_ocr.R, get_ocr_results.R, create_ocr_final.R
+Create a `.env` file containing:
 
-## Algorithmic document identification
-These scripts loop through case folders with all labeled PDF documents to search for certain types of documents and estimate case-level outcomes based on which documents are included in each case folder. This method is >90% effective for many case outcomes, but does not allow us to measure some hearing outcomes and is less accurate for other more complex measures such as tenants' access to legal representation.
+- Azure OpenAI credentials  
+- Azure Document Intelligence credentials  
 
-Scripts (in /scripts): algorithmic_doc_search.R, get_leaf_dirs.R, doctype_search.R
-Data wrangling prior to merging with LLM estimated outcomes: algorithmic_data_wrangling.R
+You will also need sufficient Azure credits to run OCR and LLM inference at scale.
 
-## LLM variable estimation
-These scripts use ChatGPT-4o through the Azure portal to estimate a series of tenant behavior and case outcome variables. GPT outputs JSON strings that are then transformed to variables of interest during merging with algorithmic document identification data.
+---
 
-Scripts (in /scripts): data_from_llm.py, extract_llm_data_agreement.R, extract_llm_data_appearance.R, extract_llm_data_complaint.R, extract_llm_data_minute_entry.R, extract_llm_data_summons.R
+## OCR Text Extraction
 
-Data cleaning: clean_llm_data_agreement.R, clean_llm_data_appearance.R, clean_llm_data_complaint.R, clean_llm_data_minute_entry.R, clean_llm_data_summons.R, fix_by_path.R, merge_llm_data
+These scripts use a pre-built OCR model in Azure Document Intelligence to extract text from all documents in the dataset.
 
-## Data merging
-These scripts merge the algorithmic document identification data with the LLM variable estimates to create the most accurate estimates possible.
+If necessary, `rerun_ocr.R` can be used to selectively rerun failed jobs.
 
-Script (in /scripts): merge_algorithmic_w_llm_data.R
+### Scripts (in `/scripts`)
+- `test_ocr.py`
+- `rerun_ocr.R`
+- `get_ocr_results.R`
+- `create_ocr_final.R`
 
-## Document layout analysis
-The repo contains a few scripts related to using Azure document layout analysis to measure procedural outcomes. We found that document analysis was very limited in its accuracy and general usefulness for our research objectives.
+---
+
+## Algorithmic Document Identification
+
+These scripts loop through case folders containing labeled PDF documents to identify document types and estimate case-level procedural outcomes based on document presence.
+
+This method is **>90% accurate** for many case outcomes but cannot capture certain hearing outcomes and performs less reliably for complex measures such as access to legal representation.
+
+### Scripts (in `/scripts`)
+- `algorithmic_doc_search.R`
+- `get_leaf_dirs.R`
+- `doctype_search.R`
+
+### Data wrangling
+- `algorithmic_data_wrangling.R`
+
+---
+
+## LLM Variable Estimation
+
+These scripts use GPT-4o deployed through Azure OpenAI to estimate tenant behavior and case outcome variables from OCR-extracted text.
+
+Model outputs are returned as JSON and transformed into structured variables during downstream merging.
+
+### Scripts (in `/scripts`)
+- `data_from_llm.py`
+- `extract_llm_data_agreement.R`
+- `extract_llm_data_appearance.R`
+- `extract_llm_data_complaint.R`
+- `extract_llm_data_minute_entry.R`
+- `extract_llm_data_summons.R`
+
+### Data cleaning
+- `clean_llm_data_agreement.R`
+- `clean_llm_data_appearance.R`
+- `clean_llm_data_complaint.R`
+- `clean_llm_data_minute_entry.R`
+- `clean_llm_data_summons.R`
+- `fix_by_path.R`
+- `merge_llm_data.R`
+
+---
+
+## Data Integration
+
+These scripts merge algorithmic document classification results with LLM-estimated variables to generate final case-level datasets.
+
+### Scripts (in `/scripts`)
+- `merge_algorithmic_w_llm_data.R`
+
+---
+
+## Research Output
+
+Working papers and extended abstracts are being prepared for dissemination in computational social science and NLP venues.
+
+---
+
+## Notes on Data Access
+
+Court documents are not included due to privacy and legal restrictions. This repository focuses on the processing architecture and analytical methods.
