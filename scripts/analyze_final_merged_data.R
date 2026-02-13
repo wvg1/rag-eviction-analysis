@@ -1,4 +1,5 @@
 #load packages
+library(readxl)
 library(writexl)
 library(tidyverse)
 library(scales)
@@ -223,34 +224,6 @@ p4 <- make_outcome_plot(final_merged_data, court_displacement, "Court displaceme
 (p1 | p2) / (p3 | p4) + 
   plot_layout(heights = c(1, 0.9), axis_titles = "collect") &
   theme(axis.title.y = element_text(margin = margin(r = 15)))
- 
-#draft of statistical analysis
-#first remove some NAs if they are there
-model_data <- final_merged_data %>%
-  filter(
-    !is.na(case_filed),
-    !is.na(file_date)
-  ) %>%
-  mutate(
-    months_since_start = as.numeric(difftime(file_date, min(file_date, na.rm = TRUE), units = "days")) / 30.44,
-    year_factor = factor(year)
-  )
-
-#random sample of cases for hand coding
-set.seed(194)
-final_merged_data %>%
-  slice_sample(n = 100) %>%           
-  arrange(case_number) %>%           
-  write_xlsx("final_merged_data_sample.xlsx")
-
-#random sample of cases for hand coding, second iteration
-set.seed(193)
-final_merged_data %>%
-  group_by(year) %>%
-  slice_sample(n = 30) %>%
-  ungroup() %>%
-  arrange(year, case_number) %>%
-  write_xlsx("data/final_merged_data_sample_v2.xlsx")
 
 #random sample of cases for hand coding, third iteration
 set.seed(215)
@@ -267,15 +240,21 @@ final_merged_data %>%
                                            ~paste(.x, collapse = ", "))) %>%
   write_xlsx("data/final_merged_data_sample_v3.xlsx")
 
-#random sample of cases for hand coding, fourth iteration
+#random sample of cases for hand coding
 set.seed(9)
 final_merged_data %>%
   group_by(year) %>%
-  slice_sample(n = 5) %>%
+  slice_sample(n = 100) %>%
   ungroup() %>%
   arrange(year, case_number) %>%
   select(case_number, file_date, filed_after_deadline, amount_owed, plaintiff_rep, 
          defendant_appearance, appearance_pro_se, hearing_held, defendant_hearing_attendance,
          writ_final, dismissal_final, old_final,defendant_rep_merged, court_displacement) %>%
-  write_xlsx("data/final_merged_data_sample_v5.xlsx")
+  write_xlsx("data/final_merged_data_random_sample.xlsx")
+
+### analyze accuracy of RAG pipeline based on random sample of 300 cases ###
+# load verified observations
+verified_data <- read_xlsx("data/verified_data.xlsx")
+
+
 
