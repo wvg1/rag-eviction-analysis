@@ -256,5 +256,119 @@ final_merged_data %>%
 # load verified observations
 verified_data <- read_xlsx("data/verified_data.xlsx")
 
+verified_data_clean <- verified_data %>%
+  rename_all(tolower) %>%
+  # keep only case_number and _verified columns
+  select(case_number, ends_with("_verified")) %>%
+  # remove rows with all NAs in verified columns
+  filter(!if_all(ends_with("_verified"), is.na))
 
+# make sure to count blanks
 
+# merge datasets for validation
+validation_data <- final_merged_data %>%
+  filter(case_number %in% verified_data_clean$case_number) %>%
+  left_join(verified_data_clean, by = "case_number")
+
+# validation function
+validation_results_binary <- map_df(binary_no_blanks, function(var) {
+  llm_col <- var
+  verified_col <- paste0(var, "_verified")
+  
+  if (verified_col %in% names(validation_data)) {
+    validate_binary_no_blanks(
+      validation_data[[llm_col]],
+      validation_data[[verified_col]],
+      var
+    )
+  } else {
+    tibble(
+      variable = var,
+      n_verified = 0,
+      accuracy_pct = NA,
+      blanks_in_llm_n = NA,
+      blanks_in_llm_pct = NA,
+      false_positives_n = NA,
+      false_negatives_n = NA,
+      notes = "no verification data"
+    )
+  }
+})
+
+print(validation_results_binary)
+
+# function to calculate comprehensive accuracy metrics
+calculate_classification_metrics <- function(predicted, actual) {
+  # ensure both are logical
+  predicted <- as.logical(predicted)
+  actual <- as.logical(actual)
+  
+  tp <- sum(predicted == TRUE & actual == TRUE, na.rm = TRUE)
+  tn <- sum(predicted == FALSE & actual == FALSE, na.rm = TRUE)
+  fp <- sum(predicted == TRUE & actual == FALSE, na.rm = TRUE)
+  fn <- sum(predicted == FALSE & actual == TRUE, na.rm = TRUE)
+  
+  accuracy <- (tp + tn) / (tp + tn + fp + fn)
+  
+  # precision: Of all TRUE predictions, how many were correct
+  precision <- if ((tp + fp) > 0) tp / (tp + fp) else NA
+  
+  # recall: of all actual TRUEs, how many did we find
+  recall <- if ((tp + fn) > 0) tp / (tp + fn) else NA
+  
+  # F1: harmonic mean of precision and recall
+  f1 <- if (!is.na(precision) & !is.na(recall) & (precision + recall) > 0) {
+    2 * (precision * recall) / (precision + recall)
+  } else {
+    NA
+  }
+  
+  # specificity: Of all actual FALSEs, how many did we find?
+  specificity <- if ((tn + fp) > 0) tn / (tn + fp) else NA
+  
+  # false positive rate
+  fpr <- if ((tn + fp) > 0) fp / (tn + fp) else NA
+  
+  # false negative rate
+  fnr <- if ((tp + fn) > 0) fn / (tp + fn) else NA
+  
+  return(list(
+    tp = tp, tn = tn, fp = fp, fn = fn,
+    accuracy = accuracy,
+    precision = precision,
+    recall = recall,
+    f1 = f1,
+    specificity = specificity,
+    fpr = fpr,
+    fnr = fnr
+  ))
+}
+
+# function to validate binary logical variables that should have no blanks
+validate_binary_no_blanks <- function(llm_var, verified_var, variable_name) {
+  comparison <- tibble(
+    llm = llm_var,
+    verified = verified_var,
+    variable = variable_name
+  ) %>%
+    filter(!is.na(verified))  # only compare to cases we have verification for
+  
+  if (nrow(comparison) == 0) {
+    return(tibble(
+      variable = variable_name,
+      n_verified = 0,
+      accuracy_pct = NA,
+      precision_pct = NA,
+      recall_pct = NA,
+      f1 = NA,
+      specificity_pct = NA,
+      blanks_in_llm_n = NA,
+      blanks_in_llm_pct = NA,
+      tp = NA,
+      fp = NA,
+      fn = NA,
+      tn = NA,
+      notes = "No verified cases"
+    ))
+  }
+}
