@@ -263,15 +263,6 @@ failed_test_docs <- docs_test_complaint %>%
   select(row_id, direc, document, text_length = text) %>%
   mutate(text_length = nchar(text_length))
 
-#test summary
-message(sprintf("Successfully processed: %d/%d documents", nrow(llm_test_complaint), n_test))
-message(sprintf("Failed: %d/%d documents", nrow(failed_test_docs), n_test))
-
-if (nrow(failed_test_docs) > 0) {
-  message("\nFailed documents:")
-  print(failed_test_docs %>% select(row_id, document, text_length))
-}
-
 #create dataframe containing all data from complaint documents, add source identifiers
 llm_data_complaint <- map2_dfr(
   docs_to_run_complaint$text,
