@@ -1,4 +1,3 @@
-@"
 import os
 import base64
 from openai import AzureOpenAI
@@ -79,4 +78,3 @@ def data_from_llm(system_prompt, full_text):
     )
     
     return completion.to_json()
-"@ | Out-File -Encoding UTF8 scripts/data_from_llm.py
