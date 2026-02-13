@@ -4,3 +4,5 @@ __pycache__/
 .Rhistory
 .RData
 venv/
+.venv
+/data

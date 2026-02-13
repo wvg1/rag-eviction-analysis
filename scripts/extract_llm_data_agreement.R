@@ -1,6 +1,7 @@
-###this script uses data_from_llm.py to document case characteristics from documents relating to agreements in eviction cases
-###data_from_llm.py uses chatgpt (with the prompt below) to answer questions about cases using relevant documents
-###working directory should be the main folder of the eviction-data repo
+### this script uses data_from_llm.py to document case characteristics from documents relating to agreements in eviction cases
+### data_from_llm.py uses chatgpt (with the prompt below) to answer questions about cases using relevant documents
+### working directory should be the main folder of the rag-eviction-analysis repo
+### unlike the other extraction scripts in this repo, this script also extracts the reasoning for each response if desired for future use
 
 #load required packages
 library(tidyverse)
@@ -8,7 +9,7 @@ library(reticulate)
 library(jsonlite)
 
 #load virtual environment and python
-use_virtualenv("/Users/wvg1/Documents/eviction-data/.venv", required = TRUE)
+use_virtualenv("C:/dev/rag-eviction-analysis/.venv", required = TRUE)
 py_config()
 py <- import_builtins()
 pickle <- import("pickle")
