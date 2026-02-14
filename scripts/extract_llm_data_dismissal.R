@@ -8,7 +8,7 @@ library(reticulate)
 library(jsonlite)
 
 #load virtual environment and python
-use_virtualenv("/Users/wvg1/Documents/eviction-data/.venv", required = TRUE)
+use_virtualenv("C:/dev/rag-eviction-analysis/.venv", required = TRUE)
 py_config()
 py <- import_builtins()
 pickle <- import("pickle")
