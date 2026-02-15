@@ -1,6 +1,6 @@
 ###this script uses data_from_llm.py to document case characteristics from dismissal documents in eviction cases
 ###data_from_llm.py uses chatgpt (with the prompt below) to answer questions about cases using relevant documents
-###working directory should be the main folder of the eviction-data repo
+###working directory should be the main folder of the rag-eviction-analysis repo
 
 #load required packages
 library(tidyverse)
