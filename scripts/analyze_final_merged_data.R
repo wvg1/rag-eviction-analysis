@@ -225,33 +225,6 @@ p4 <- make_outcome_plot(final_merged_data, court_displacement, "Court displaceme
   plot_layout(heights = c(1, 0.9), axis_titles = "collect") &
   theme(axis.title.y = element_text(margin = margin(r = 15)))
 
-#random sample of cases for hand coding, third iteration
-set.seed(215)
-final_merged_data %>%
-  group_by(year) %>%
-  slice_sample(n = 100) %>%
-  ungroup() %>%
-  arrange(year, case_number) %>%
-  select(case_number, file_date, amount_owed, census_block_group, plaintiff_rep, 
-         defendant_appearance, hearing_held, defendant_hearing_attendance, 
-         case_defendant_surnames, writ_final, dismissal_final, old_final,
-         defendant_rep_merged, commercial_flag, court_displacement) %>%
-  mutate(case_defendant_surnames = map_chr(case_defendant_surnames, 
-                                           ~paste(.x, collapse = ", "))) %>%
-  write_xlsx("data/final_merged_data_sample_v3.xlsx")
-
-#random sample of cases for hand coding
-set.seed(9)
-final_merged_data %>%
-  group_by(year) %>%
-  slice_sample(n = 100) %>%
-  ungroup() %>%
-  arrange(year, case_number) %>%
-  select(case_number, file_date, filed_after_deadline, amount_owed, plaintiff_rep, 
-         defendant_appearance, appearance_pro_se, hearing_held, defendant_hearing_attendance,
-         writ_final, dismissal_final, old_final,defendant_rep_merged, court_displacement) %>%
-  write_xlsx("data/final_merged_data_random_sample.xlsx")
-
 ### analyze accuracy of RAG pipeline based on random sample of 300 cases ###
 # load verified observations
 verified_data <- read_xlsx("data/verified_data.xlsx")

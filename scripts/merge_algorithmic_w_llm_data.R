@@ -5,7 +5,7 @@
 library(tidyverse)
 library(readxl)
 
-#make sure algorithmic_data is in environment
+#make sure algorithmic_data is in environment and that you've run algorithmic_data_wrangling.R
 
 #check whether llm_data_combined has all of the case numbers from algorithmic_data, and review missing cases
 missing_case_numbers_llm <- setdiff(algorithmic_data$case_number, llm_data_combined$case_number)
