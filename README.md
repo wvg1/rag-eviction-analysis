@@ -1,6 +1,6 @@
-# Multimodal RAG Pipeline for Extracting Eviction Case Outcomes from Court Documents
+# Multimodal RAG pipeline for extracting eviction case outcomes from court documents
 
-## Project Summary
+## Project summary
 
 This project builds a scalable retrieval-augmented generation (RAG) pipeline to extract structured behavioral and legal outcome measures from unstructured eviction court documents.
 
@@ -17,7 +17,7 @@ This project demonstrates how multimodal machine learning pipelines can expand m
 
 ---
 
-## Pipeline Overview
+## Pipeline overview
 
 There are four main stages in the pipeline:
 
@@ -41,7 +41,7 @@ You will also need sufficient Azure credits to run OCR and LLM inference at scal
 
 ---
 
-## OCR Text Extraction
+## OCR text extraction
 
 These scripts use a pre-built OCR model in Azure Document Intelligence to extract text from all documents in the dataset.
 
@@ -55,7 +55,7 @@ If necessary, `rerun_ocr.R` can be used to selectively rerun failed jobs.
 
 ---
 
-## Algorithmic Document Identification
+## Algorithmic document identification
 
 These scripts loop through case folders containing labeled PDF documents to identify document types and estimate case-level procedural outcomes based on document presence.
 
@@ -71,7 +71,7 @@ This method is **>90% accurate** for many case outcomes but cannot capture certa
 
 ---
 
-## LLM Variable Estimation
+## LLM variable estimation
 
 These scripts use GPT-4o deployed through Azure OpenAI to estimate tenant behavior and case outcome variables from OCR-extracted text.
 
@@ -96,7 +96,7 @@ Model outputs are returned as JSON and transformed into structured variables dur
 
 ---
 
-## Data Integration
+## Data merging
 
 These scripts merge algorithmic document classification results with LLM-estimated variables to generate final case-level datasets.
 
@@ -105,12 +105,12 @@ These scripts merge algorithmic document classification results with LLM-estimat
 
 ---
 
-## Research Output
+## Research output
 
 Working papers and extended abstracts are being prepared for dissemination in computational social science and NLP venues.
 
 ---
 
-## Notes on Data Access
+## Notes on eata access
 
 Court documents are not included due to privacy and legal restrictions. This repository focuses on the processing architecture and analytical methods.
