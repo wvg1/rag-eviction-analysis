@@ -521,3 +521,22 @@ llm_data_combined <- llm_data_combined %>%
     }
   ) %>%
   ungroup()
+
+# alternative approach: dismissal with uncertain or no move = not displaced
+llm_data_combined <- llm_data_combined %>%
+  group_by(case_number) %>%
+  mutate(
+    court_displacement_alt = case_when(
+      # if court_displacement is already non-NA, use it unless it's a dismissal with NA move
+      !is.na(court_displacement) ~ court_displacement,
+      # dismissals with no/missing tenant_move = not displaced
+      any(source == "dismissal") ~ FALSE,
+      TRUE ~ NA
+    )
+  ) %>%
+  ungroup()
+
+# compare two court_displacement measures
+llm_data_combined %>%
+  distinct(case_number, court_displacement, court_displacement_alt) %>%
+  count(court_displacement, court_displacement_alt)
