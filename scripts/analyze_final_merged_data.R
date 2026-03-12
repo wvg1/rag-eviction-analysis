@@ -116,7 +116,7 @@ final_merged_data %>%
   scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1)) +
   scale_fill_manual(values = c("No" = "navy", "Yes" = "skyblue")) +
   labs(
-    title = "defendant Behaviors and Representation",
+    title = "Defendant Behaviors and Representation",
     x = NULL,
     y = "defendant Representation",
     fill = NULL
@@ -148,7 +148,7 @@ final_merged_data %>%
                                "Hearing Held" = "skyblue", 
                                "Representation" = "salmon")) +
   labs(
-    title = "defendant Behaviors and Representation by Location",
+    title = "Defendant Behaviors and Representation by Location",
     x = NULL,
     y = "Rate",
     fill = NULL
@@ -176,7 +176,7 @@ final_merged_data %>%
   labs(
     title = "Case Outcomes by Filing Month",
     x = "Month",
-    y = "Proportion of Cases Filed by Month",
+    y = "Proportion of cases by month",
     color = "Case outcome"
   ) +
   theme_minimal()
@@ -190,7 +190,7 @@ final_merged_data %>%
   geom_line(color = "navy", linewidth = 1) +
   scale_y_continuous(labels = scales::percent_format()) +
   labs(
-    title = "defendant Representation by Month",
+    title = "Defendant Representation by Month",
     x = "Month",
     y = "Proportion of Cases"
   ) +
@@ -225,7 +225,7 @@ p4 <- make_outcome_plot(final_merged_data, court_displacement, "Court displaceme
   plot_layout(heights = c(1, 0.9), axis_titles = "collect") &
   theme(axis.title.y = element_text(margin = margin(r = 15)))
 
-### analyze accuracy of RAG pipeline based on random sample of 300 cases ###
+### analyze accuracy on random sample of 300 cases ###
 # load verified observations
 verified_data <- read_xlsx("data/verified_data.xlsx")
 
@@ -283,7 +283,7 @@ calculate_classification_metrics <- function(predicted, actual) {
   
   accuracy <- (tp + tn) / (tp + tn + fp + fn)
   
-  # precision: Of all TRUE predictions, how many were correct
+  # precision: of all TRUE predictions, how many were correct
   precision <- if ((tp + fp) > 0) tp / (tp + fp) else NA
   
   # recall: of all actual TRUEs, how many did we find
@@ -296,7 +296,7 @@ calculate_classification_metrics <- function(predicted, actual) {
     NA
   }
   
-  # specificity: Of all actual FALSEs, how many did we find?
+  # specificity: Of all actual FALSE, how many did we find?
   specificity <- if ((tn + fp) > 0) tn / (tn + fp) else NA
   
   # false positive rate
