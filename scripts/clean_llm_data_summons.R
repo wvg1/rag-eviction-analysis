@@ -1,3 +1,5 @@
+### this cleaning script should be run after complaint data has been cleaned ###
+
 #load packages
 library(tidyverse)
 library(sf)
@@ -5,6 +7,10 @@ library(httr)
 library(readr)
 library(tigris)
 library(lubridate)
+
+#load environment variables
+readRenviron(".env")
+api_key <- Sys.getenv("GOOGLE_MAPS_API_KEY")
 
 #load summons llm data
 llm_data_summons <- read_rds("data/llm_data_summons.rds")
@@ -38,151 +44,13 @@ llm_data_summons_clean <- llm_data_summons_clean %>%
     case_type = if_else(is_commercial, "commercial", "residential")
   )
 
-### clean name data ###
-#surname extraction (defendants only)
-extract_surnames <- function(names) {
-  if (is.null(names) || length(names) == 0 || all(is.na(names))) {
-    return(NA_character_)
-  }
-  
-  surnames <- map_chr(names, function(full_name) {
-    full_name <- str_trim(full_name)
-    
-    #flag non-person entries
-    if (str_detect(full_name, regex("occupant|doe|unknown|premises|possession|property", ignore_case = TRUE))) {
-      return(NA_character_)
-    }
-    
-    #remove suffixes
-    full_name <- str_remove(full_name, "\\s*,?\\s*(Jr\\.?|Sr\\.?|III?|IV|V)$")
-    
-    #split into words
-    parts <- str_split(full_name, "\\s+")[[1]]
-    
-    if (length(parts) <= 1) return(NA_character_)
-    
-    #extract surname based on word count
-    if (length(parts) == 2) {
-      surname <- parts[2]
-    } else if (length(parts) == 3) {
-      if (str_to_lower(parts[2]) %in% c("de", "del", "van", "von", "da", "di", "le", "la")) {
-        surname <- paste(parts[2:3], collapse = " ")
-      } else {
-        surname <- parts[3]
-      }
-    } else if (length(parts) >= 4) {
-      if (str_to_lower(parts[length(parts)-1]) %in% c("de", "del", "van", "von", "da", "di", "le", "la")) {
-        surname <- paste(parts[(length(parts)-1):length(parts)], collapse = " ")
-      } else {
-        surname <- parts[length(parts)]
-      }
-    }
-    
-    #clean for Census matching (uppercase, letters only)
-    surname <- str_to_upper(surname) %>%
-      str_remove_all("[^A-Z\\s]") %>%
-      str_squish()
-    
-    if (surname == "" || nchar(surname) <= 1) return(NA_character_)
-    return(surname)
-  })
-  
-  #return only valid surnames
-  valid_surnames <- surnames[!is.na(surnames) & surnames != ""]
-  if (length(valid_surnames) == 0) return(NA_character_)
-  return(valid_surnames)
-}
-
-#name cleaning for matching across datasets
-clean_name_for_matching <- function(name) {
-  if (is.na(name) || name == "") return(NA_character_)
-  
-  name <- str_trim(name)
-  name_clean <- str_to_upper(name)
-  
-  #standardize suffixes (Jr, Sr, II, III, etc.)
-  name_clean <- str_replace_all(name_clean, "\\s+(JR\\.?|SR\\.?|I{2,3}|IV|V)$", "")
-  
-  #standardize initials
-  name_clean <- str_replace_all(name_clean, "\\b([A-Z])\\.\\s*", "\\1 ")
-  name_clean <- str_replace_all(name_clean, "\\s+", " ")
-  
-  #remove procedural language
-  if (str_detect(name_clean, regex("ALL OTHER|UNKNOWN|ANY AND ALL|OCCUPANTS|PREMISES|POSSESSION", ignore_case = FALSE))) {
-    return(NA_character_)
-  }
-  
-  name_clean <- str_squish(name_clean)
-  if (name_clean == "") return(NA_character_)
-  
-  return(name_clean)
-}
-
-#apply to name lists
-clean_name_list <- function(name_list) {
-  if (is.null(name_list) || all(is.na(name_list))) {
-    return(NA)
-  }
-  
-  cleaned <- map_chr(name_list, clean_name_for_matching)
-  cleaned <- cleaned[!is.na(cleaned)]
-  cleaned <- unique(cleaned)
-  
-  if (length(cleaned) == 0) return(NA)
-  return(cleaned)
-}
-
-#apply surname extraction and name standardization
-
-llm_data_summons_clean <- llm_data_summons_clean %>%
-  mutate(
-    # BISG surname extraction (defendants only)
-    defendant_surnames = map(defendant_names, extract_surnames),
-    n_valid_defendants = map_int(defendant_surnames, function(snames) {
-      if (all(is.na(snames))) return(0L)
-      sum(!is.na(snames) & snames != "")
-    }),
-    
-    #name standardization (all parties)
-    plaintiff_names_clean = map(plaintiff_names, clean_name_list),
-    defendant_names_clean = map(defendant_names, clean_name_list),
-    plaintiff_attorneys_clean = map(plaintiff_attorneys, clean_name_list)
-  )
-
-#check results
-llm_data_summons_clean %>%
-  count(case_type, n_valid_defendants) %>%
-  arrange(case_type, n_valid_defendants) %>%
-  print(n = 20)
-
-llm_data_summons_clean %>%
-  filter(case_type == "residential", n_valid_defendants > 0) %>%
-  mutate(
-    defendant_names_str = sapply(defendant_names, paste, collapse = ", "),
-    defendant_surnames_str = sapply(defendant_surnames, paste, collapse = ", ")
-  ) %>%
-  select(defendant_names_str, defendant_surnames_str, n_valid_defendants) %>%
-  head(15) %>%
-  print()
-
-all_surnames <- llm_data_summons_clean %>%
-  filter(case_type == "residential") %>%
-  select(defendant_surnames) %>%
-  unnest(defendant_surnames) %>%
-  filter(!is.na(defendant_surnames))
-
-all_surnames %>%
-  count(defendant_surnames, sort = TRUE) %>%
-  head(30) %>%
-  print()
-
 ### clean address data ###
 
 #check for address columns with leading or trailing whitespace
 llm_data_summons_clean %>%
   summarise(across(starts_with("address"), ~ sum(str_detect(., "^\\s|\\s$"), na.rm = TRUE)))
 
-#trim whitespace for a few address entries 
+#trim whitespace for a few address entries
 llm_data_summons_clean <- llm_data_summons_clean %>%
   mutate(address = if_else(is.na(address), NA_character_, str_squish(address)))
 
@@ -216,7 +84,8 @@ manual_fixes_street <- tibble(
     "15612 1164 Street E",
     "194913 166th St E",
     "11063 188th St. Ct. E.",
-    "12608 81st Avenue Court E"
+    "12608 81st Avenue Court E",
+    "1512 5 Spraque"
   ),
   address_street_new = c(
     "1802 S Woodland Glen Dr",
@@ -246,7 +115,8 @@ manual_fixes_street <- tibble(
     "15612 116th Street E",
     "19413 166th St E",
     "11063 188th St Ct E",
-    "12608 81st Avenue Ct E"
+    "12608 81st Avenue Ct E",
+    "1512 S Sprague"
   )
 )
 
@@ -273,6 +143,141 @@ llm_data_summons_clean <- llm_data_summons_clean %>%
     address_city == "Shake Bary" ~ "Lakebay",
     TRUE ~ address_city
   ))
+
+### google maps geocoding — cases with no complaint address ###
+
+#define known out-of-county cases to exclude
+out_of_county_cases <- c(
+  "22-2-07206-2",  # Auburn
+  "22-2-09620-4",  # Seattle
+  "23-2-05570-1",  # Yelm
+  "23-2-05739-8",  # Clinton
+  "23-2-07405-5",  # Tumwater
+  "24-2-05674-8",  # Auburn
+  "24-2-07646-3",  # Kent
+  "24-2-09155-1"   # Arlington
+)
+
+#load complaint clean data to identify cases with no geocoded address
+llm_data_complaint_clean <- read_rds("data/llm_data_complaint_clean.rds")
+
+complaint_no_address <- llm_data_complaint_clean %>%
+  filter(is.na(address_street) | address_street == "") %>%
+  pull(case_number) %>%
+  unique()
+
+#target: cases with no complaint address, valid summons address, not out-of-county
+to_geocode_summons <- llm_data_summons_clean %>%
+  filter(
+    case_number %in% complaint_no_address,
+    !is.na(address_street), address_street != "",
+    !case_number %in% out_of_county_cases
+  ) %>%
+  group_by(case_number) %>%
+  slice(1) %>%
+  ungroup() %>%
+  mutate(
+    address_zip_clean = str_extract(address_zip, "^\\d{5}"),
+    geocode_input = str_squish(paste0(
+      address_street, ", ",
+      address_city, ", ",
+      "Pierce County, WA",
+      if_else(!is.na(address_zip_clean) & address_zip_clean != "",
+              paste0(" ", address_zip_clean), "")
+    ))
+  )
+
+nrow(to_geocode_summons)  # check how many cases to geocode
+
+#geocoder function
+geocode_google <- function(address, key) {
+  resp <- GET(
+    "https://maps.googleapis.com/maps/api/geocode/json",
+    query = list(address = address, key = key)
+  )
+  result <- content(resp, as = "parsed")
+  
+  if (result$status == "OK") {
+    loc <- result$results[[1]]$geometry$location
+    tibble(
+      lat_new           = loc$lat,
+      lon_new           = loc$lng,
+      geocode_status    = "OK",
+      geocode_type      = result$results[[1]]$types[[1]],
+      formatted_address = result$results[[1]]$formatted_address
+    )
+  } else {
+    tibble(
+      lat_new           = NA_real_,
+      lon_new           = NA_real_,
+      geocode_status    = result$status,
+      geocode_type      = NA_character_,
+      formatted_address = NA_character_
+    )
+  }
+}
+
+#run google geocoder with rate limiting
+geocode_results_summons <- to_geocode_summons %>%
+  mutate(row = row_number()) %>%
+  group_by(row) %>%
+  group_modify(~{
+    Sys.sleep(0.05)
+    bind_cols(.x, geocode_google(.x$geocode_input, api_key))
+  }) %>%
+  ungroup()
+
+#save raw results
+saveRDS(geocode_results_summons, "data/geocode_google_summons_fallback.rds")
+
+#qc: review match status and type distribution
+print(count(geocode_results_summons, geocode_status))
+print(count(geocode_results_summons, geocode_type))
+
+#keep only street-level matches
+geocode_usable_summons <- geocode_results_summons %>%
+  filter(
+    geocode_status == "OK",
+    geocode_type %in% c("street_address", "premise", "subpremise")
+  )
+
+#spatial join to Pierce County block groups (year = 2020 to match complaint pipeline)
+pierce_bg <- block_groups(state = "WA", county = "Pierce", year = 2020) %>%
+  st_transform(4326)
+
+geocode_sf_summons <- geocode_usable_summons %>%
+  st_as_sf(coords = c("lon_new", "lat_new"), crs = 4326)
+
+geocode_with_cbg_summons <- st_join(geocode_sf_summons, pierce_bg["GEOID"], join = st_within) %>%
+  st_drop_geometry() %>%
+  select(row_id, census_block_group_summons = GEOID)
+
+#carry lat/lon separately — lost when st_as_sf converts coords to geometry
+geocode_coords_summons <- geocode_usable_summons %>%
+  select(row_id, lat_new, lon_new)
+
+geocode_with_cbg_summons <- geocode_with_cbg_summons %>%
+  left_join(geocode_coords_summons, by = "row_id")
+
+#attach geocoding results to summons data
+llm_data_summons_clean <- llm_data_summons_clean %>%
+  left_join(geocode_with_cbg_summons, by = "row_id") %>%
+  mutate(
+    lon = coalesce(lon_new, NA_real_),
+    lat = coalesce(lat_new, NA_real_),
+    census_block_group = census_block_group_summons
+  ) %>%
+  select(-lon_new, -lat_new, -census_block_group_summons)
+
+#coverage summary
+geocoding_summary_summons <- tibble(
+  n_targeted   = nrow(to_geocode_summons),
+  n_geocoded   = sum(!is.na(llm_data_summons_clean$lon)),
+  n_with_cbg   = sum(!is.na(llm_data_summons_clean$census_block_group)),
+  pct_geocoded = round(n_geocoded / n_targeted * 100, 2)
+)
+
+print(geocoding_summary_summons)
 
 #save data
 saveRDS(llm_data_summons_clean, "data/llm_data_summons_clean.rds")

@@ -7,17 +7,6 @@ library(readxl)
 
 #make sure algorithmic_data is in environment and that you've run algorithmic_data_wrangling.R
 
-#check whether llm_data_combined has all of the case numbers from algorithmic_data, and review missing cases
-missing_case_numbers_llm <- setdiff(algorithmic_data$case_number, llm_data_combined$case_number)
-missing_cases_llm <- algorithmic_data %>%
-  filter(case_number %in% missing_case_numbers_llm)
-
-#check whether algorithmic_data has all of the case_numbers from llm_data_combined, and review missing cases
-#none appear to be missing
-missing_case_numbers_algo <- setdiff(llm_data_combined$case_number, algorithmic_data$case_number)
-missing_cases_algo <- llm_data_combined %>%
-  filter(case_number %in% missing_case_numbers_algo)
-
 #assign variables to save
 keep_llm <- c(
   "case_type",
@@ -33,10 +22,7 @@ keep_llm <- c(
   "hearing_held",
   "defendant_hearing_attendance",
   "defendant_rep",
-  "case_defendant_attorneys",
-  "court_displacement",
-  "case_defendant_first_names",
-  "case_defendant_surnames"
+  "court_displacement"
 )
 
 keep_algo <- c("commercial", "year",
