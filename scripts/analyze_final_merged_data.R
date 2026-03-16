@@ -14,9 +14,24 @@ library(modelsummary)
 final_merged_data <- final_merged_data %>%
   filter(commercial_flag == 0)
 
-#drop cases without census block group (can't do BISG)
+#drop cases without census block group
 final_merged_data <- final_merged_data %>%
   filter(!is.na(census_block_group))
+
+# drop out-of-county cases (geocoded outside Pierce County)
+out_of_county_cases <- c(
+  "22-2-07206-2",  # Auburn
+  "22-2-09620-4",  # Seattle
+  "23-2-05570-1",  # Yelm
+  "23-2-05739-8",  # Clinton
+  "23-2-07405-5",  # Tumwater
+  "24-2-05674-8",  # Auburn
+  "24-2-07646-3",  # Kent
+  "24-2-09155-1"   # Arlington
+)
+
+final_merged_data <- final_merged_data %>%
+  filter(!case_number %in% out_of_county_cases)
 
 #descriptive outcome stats by year
 final_merged_data %>%
