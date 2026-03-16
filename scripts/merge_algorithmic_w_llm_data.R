@@ -16,6 +16,8 @@ keep_llm <- c(
   "address_state",
   "address_zip",
   "census_block_group",
+  "lat",
+  "lon",
   "plaintiff_rep",
   "defendant_appearance",
   "appearance_pro_se",
@@ -24,7 +26,6 @@ keep_llm <- c(
   "defendant_rep",
   "court_displacement"
 )
-
 keep_algo <- c("commercial", "year",
                "tenant_rep","writ", "dismissal", "old",
                "writ_final", "dismissal_final", "old_final")
