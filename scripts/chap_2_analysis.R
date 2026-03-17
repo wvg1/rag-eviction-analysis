@@ -90,7 +90,7 @@ print(summary(final_merged_data$median_income))
 #define low-income indicator
 #threshold: below 80% of Pierce County area median income (AMI)
 #2020 Pierce County AMI = $90,100 (HUD); 80% AMI = $72,080
-ami_threshold <- 72080
+ami_threshold <- 45050
 
 final_merged_data <- final_merged_data %>%
   mutate(low_income = median_income < ami_threshold)
