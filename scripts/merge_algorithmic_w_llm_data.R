@@ -1,5 +1,5 @@
 ###this script
-###working directory should be the main folder of the eviction-data repo
+###working directory should be the main folder of the rag-eviction-analysis repo
 
 #load required packages
 library(tidyverse)
@@ -10,7 +10,6 @@ library(readxl)
 #assign variables to save
 keep_llm <- c(
   "case_type",
-  "filed_after_deadline",
   "amount_owed",
   "address_city",
   "address_state",
@@ -20,7 +19,6 @@ keep_llm <- c(
   "lon",
   "plaintiff_rep",
   "defendant_appearance",
-  "appearance_pro_se",
   "hearing_held",
   "defendant_hearing_attendance",
   "defendant_rep",
@@ -125,9 +123,7 @@ final_merged_data <- final_merged_data %>%
     hearing_held = as.logical(hearing_held),
     defendant_hearing_attendance = as.logical(defendant_hearing_attendance),
     defendant_rep_merged = as.logical(defendant_rep_merged),
-    commercial_flag = as.logical(commercial_flag),
-    filed_after_deadline = as.logical(filed_after_deadline),
-    appearance_pro_se = as.logical(appearance_pro_se),
+    commercial_flag = as.logical(commercial_flag)
   )
 
 #fill in missing file_dates manually

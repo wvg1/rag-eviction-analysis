@@ -219,13 +219,9 @@ llm_data_combined <- llm_data_combined %>%
         # no relevant documents
         NA
       } else {
-        # find last date with meaningful tenant_move info (non-empty, non-NA)
-        # writs always count as meaningful even if tenant_move is NA
-        docs_with_info <- docs %>%
-          mutate(has_info = source == "writ" | (!is.na(tenant_move) & tenant_move != ""))
-        
-        last_meaningful_date <- docs_with_info %>%
-          filter(has_info) %>%
+        # find the last date with any relevant document
+        # writs are always meaningful; other sources counted regardless of tenant_move
+        last_meaningful_date <- docs %>%
           pull(file_date) %>%
           max(na.rm = TRUE)
         
@@ -274,12 +270,12 @@ llm_data_combined <- llm_data_combined %>%
           # apply logic
           case_when(
             source_final == "writ" ~ TRUE,
-            source_final == "stay_vacate" & move_final == "No" ~ FALSE,
             source_final == "stay_vacate" & move_final == "Yes" ~ TRUE,
+            source_final == "stay_vacate" ~ FALSE,
             source_final == "dismissal" & move_final == "Yes" ~ TRUE,
-            source_final == "dismissal" & move_final == "No" ~ FALSE,
+            source_final == "dismissal" ~ FALSE,
             source_final == "agreement" & move_final == "Yes" ~ TRUE,
-            source_final == "agreement" & move_final == "No" ~ FALSE,
+            source_final == "agreement" ~ FALSE,
             TRUE ~ NA
           )
         }
@@ -287,22 +283,3 @@ llm_data_combined <- llm_data_combined %>%
     }
   ) %>%
   ungroup()
-
-# alternative approach: dismissal with uncertain or no move = not displaced
-llm_data_combined <- llm_data_combined %>%
-  group_by(case_number) %>%
-  mutate(
-    court_displacement_alt = case_when(
-      # if court_displacement is already non-NA, use it unless it's a dismissal with NA move
-      !is.na(court_displacement) ~ court_displacement,
-      # dismissals with no/missing tenant_move = not displaced
-      any(source == "dismissal") ~ FALSE,
-      TRUE ~ NA
-    )
-  ) %>%
-  ungroup()
-
-# compare two court_displacement measures
-llm_data_combined %>%
-  distinct(case_number, court_displacement, court_displacement_alt) %>%
-  count(court_displacement, court_displacement_alt)
