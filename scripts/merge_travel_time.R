@@ -1,5 +1,4 @@
-### travel_time.R
-### run after merge_and_finalize.R
+### run after merge_algorithmic_w_llm_data.R
 ### adds driving and transit travel times to Pierce County Superior Courthouse
 ### requires Google Maps Distance Matrix API key in .env
 
