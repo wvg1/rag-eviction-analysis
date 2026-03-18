@@ -194,92 +194,23 @@ llm_data_combined <- llm_data_combined %>%
   ) %>%
   ungroup()
 
-# create case-level court_displacement variable
+# prep case-level court_displacement variable, finalized in merge_algorithmic_w_llm_data.R
 llm_data_combined <- llm_data_combined %>%
   group_by(case_number) %>%
   mutate(
     court_displacement = {
-      # gather relevant documents with file dates
-      docs <- tibble(
-        source = source,
-        file_date = case_when(
-          source == "writ" ~ writ_file_date,
-          source == "stay_vacate" ~ stay_vacate_file_date,
-          source == "dismissal" ~ dismissal_file_date,
-          source == "agreement" ~ document_file_date,
-          TRUE ~ as.Date(NA)
-        ),
+      last_move <- tibble(
+        source      = source,
+        file_date   = coalesce(stay_vacate_file_date, dismissal_file_date, document_file_date),
         tenant_move = tenant_move
       ) %>%
-        filter(source %in% c("writ", "stay_vacate", "dismissal", "agreement")) %>%
-        filter(!is.na(file_date)) %>%
-        arrange(file_date)
+        filter(source %in% c("agreement", "stay_vacate", "dismissal"),
+               !is.na(file_date), tenant_move %in% c("Yes", "No")) %>%
+        arrange(file_date) %>%
+        slice_tail(n = 1) %>%
+        pull(tenant_move)
       
-      if (nrow(docs) == 0) {
-        # no relevant documents
-        NA
-      } else {
-        # find the last date with any relevant document
-        # writs are always meaningful; other sources counted regardless of tenant_move
-        last_meaningful_date <- docs %>%
-          pull(file_date) %>%
-          max(na.rm = TRUE)
-        
-        if (is.infinite(last_meaningful_date) || is.na(last_meaningful_date)) {
-          NA
-        } else {
-          # get all docs on that date
-          final_docs <- docs %>% filter(file_date == last_meaningful_date)
-          
-          # source priority: agreement > stay_vacate > dismissal > writ
-          final_docs <- final_docs %>%
-            mutate(
-              priority = case_when(
-                source == "agreement" ~ 1,
-                source == "stay_vacate" ~ 2,
-                source == "dismissal" ~ 3,
-                source == "writ" ~ 4,
-                TRUE ~ 999
-              ),
-              tenant_move_clean = if_else(
-                tenant_move == "" | is.na(tenant_move),
-                NA_character_,
-                tenant_move
-              )
-            )
-          
-          # for same source, get most common tenant_move value
-          final_docs <- final_docs %>%
-            group_by(source) %>%
-            mutate(
-              most_common = {
-                moves <- tenant_move_clean[!is.na(tenant_move_clean)]
-                if (length(moves) == 0) NA_character_ else names(sort(table(moves), decreasing = TRUE))[1]
-              }
-            ) %>%
-            ungroup()
-          
-          # pick highest priority source
-          final_doc <- final_docs %>%
-            arrange(priority, desc(!is.na(most_common)), desc(row_number())) %>%
-            slice(1)
-          
-          source_final <- final_doc$source[1]
-          move_final <- final_doc$most_common[1]
-          
-          # apply logic
-          case_when(
-            source_final == "writ" ~ TRUE,
-            source_final == "stay_vacate" & move_final == "Yes" ~ TRUE,
-            source_final == "stay_vacate" ~ FALSE,
-            source_final == "dismissal" & move_final == "Yes" ~ TRUE,
-            source_final == "dismissal" ~ FALSE,
-            source_final == "agreement" & move_final == "Yes" ~ TRUE,
-            source_final == "agreement" ~ FALSE,
-            TRUE ~ NA
-          )
-        }
-      }
+      if (length(last_move) == 0) NA else last_move == "Yes"
     }
   ) %>%
   ungroup()
