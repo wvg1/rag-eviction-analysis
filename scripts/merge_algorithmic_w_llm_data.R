@@ -157,5 +157,9 @@ final_merged_data <- final_merged_data %>%
 final_merged_data <- final_merged_data %>%
   filter(case_number != "22-2-08148-7")
 
+#finalize court_displacement: writ_final takes precedence
+final_merged_data <- final_merged_data %>%
+  mutate(court_displacement = if_else(writ_final == TRUE, TRUE, court_displacement))
+
 #save rds
 saveRDS(final_merged_data, "data/final_merged_data.rds")

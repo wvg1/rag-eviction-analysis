@@ -194,7 +194,7 @@ llm_data_combined <- llm_data_combined %>%
   ) %>%
   ungroup()
 
-# prep case-level court_displacement variable, finalized in merge_algorithmic_w_llm_data.R
+# prep court_displacement — writ_final overrides in merge_and_finalize.R
 llm_data_combined <- llm_data_combined %>%
   group_by(case_number) %>%
   mutate(
@@ -206,11 +206,11 @@ llm_data_combined <- llm_data_combined %>%
       ) %>%
         filter(source %in% c("agreement", "stay_vacate", "dismissal"),
                !is.na(file_date), tenant_move %in% c("Yes", "No")) %>%
-        arrange(file_date) %>%
-        slice_tail(n = 1) %>%
+        arrange(desc(file_date)) %>%
+        slice_head(n = 1) %>%
         pull(tenant_move)
       
-      if (length(last_move) == 0) NA else last_move == "Yes"
+      if (length(last_move) == 0) FALSE else last_move == "Yes"
     }
   ) %>%
   ungroup()

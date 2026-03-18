@@ -20,7 +20,7 @@ courthouse_lon <- -122.4443
 
 #departure time: 1:00pm on a representative weekday (Wednesday)
 #using a fixed date ensures reproducibility — transit schedules are time-sensitive
-departure_time <- as.integer(as.POSIXct("2024-01-17 13:00:00", tz = "America/Los_Angeles"))
+departure_time <- as.integer(as.POSIXct("2026-06-01 13:00:00", tz = "America/Los_Angeles"))
 
 #check coordinate coverage
 cat("Cases with coordinates:", sum(!is.na(final_merged_data$lat)), "\n")
