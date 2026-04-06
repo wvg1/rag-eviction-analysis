@@ -33,9 +33,7 @@ doc_counts <- tibble(
   ) %>%
   select(doc_type, n, prop, validation_n)
 
-print("Validation allocation (2% of total documents, minimum 25 per type):")
 print(doc_counts)
-print(paste("Total validation documents:", sum(doc_counts$validation_n)))
 
 # extract validation_n for each doc type
 validation_n_summons <- doc_counts %>% filter(doc_type == "summons") %>% pull(validation_n)
@@ -49,7 +47,10 @@ validation_n_appearance <- doc_counts %>% filter(doc_type == "appearance") %>% p
 ### summons validation ###
 set.seed(100)
 validation_sample_summons <- llm_data_summons %>%
-  mutate(year = year(summons_file_date)) %>%
+  mutate(
+    summons_file_date = as.Date(summons_file_date),
+    year = year(summons_file_date)
+  ) %>%
   group_by(year) %>%
   slice_sample(n = ceiling(validation_n_summons / n_distinct(llm_data_summons$year))) %>%
   ungroup() %>%
@@ -68,14 +69,14 @@ write_xlsx(validation_template_summons, "data/validation_summons_template.xlsx")
 ### complaint validation ###
 set.seed(101)
 validation_sample_complaint <- llm_data_complaint %>%
-  mutate(year = year(complaint_file_date)) %>%
+  mutate(year = str_extract(direc, "\\d{4}")) %>%
   group_by(year) %>%
   slice_sample(n = ceiling(validation_n_complaint / n_distinct(llm_data_complaint$year))) %>%
   ungroup() %>%
   slice_head(n = validation_n_complaint)
 
 validation_template_complaint <- validation_sample_complaint %>%
-  select(row_id, document, case_number, complaint_file_date, case_type, amount_owed, monthly_rent) %>%
+  select(row_id, document, case_number, case_type, amount_owed, monthly_rent) %>%
   mutate(
     case_type_manual = NA_character_,
     amount_owed_manual = NA_real_,
@@ -93,22 +94,20 @@ write_xlsx(validation_template_complaint, "data/validation_complaint_template.xl
 ### minute_entry validation ###
 set.seed(102)
 validation_sample_minute_entry <- llm_data_minute_entry %>%
-  mutate(year = year(minute_file_date)) %>%
+  mutate(year = year(hearing_date)) %>%
   group_by(year) %>%
   slice_sample(n = ceiling(validation_n_minute_entry / n_distinct(llm_data_minute_entry$year))) %>%
   ungroup() %>%
   slice_head(n = validation_n_minute_entry)
 
 validation_template_minute_entry <- validation_sample_minute_entry %>%
-  select(row_id, document, case_number, minute_file_date, hearing_held, defendant_attended) %>%
+  select(row_id, document, case_number, hearing_date, defendants_at_hearing) %>%
   mutate(
-    hearing_held_manual = NA_character_,
-    defendant_attended_manual = NA_character_,
+    defendants_at_hearing_manual = NA_character_,
     notes = NA_character_
   ) %>%
   rename(
-    hearing_held_extracted = hearing_held,
-    defendant_attended_extracted = defendant_attended
+    defendants_at_hearing_extracted = defendants_at_hearing
   )
 
 write_xlsx(validation_template_minute_entry, "data/validation_minute_entry_template.xlsx")
@@ -139,7 +138,10 @@ write_xlsx(validation_template_agreement, "data/validation_agreement_template.xl
 ### dismissal validation ###
 set.seed(104)
 validation_sample_dismissal <- llm_data_dismissal %>%
-  mutate(year = year(dismissal_file_date)) %>%
+  mutate(
+    dismissal_file_date = as.Date(dismissal_file_date),
+    year = year(dismissal_file_date)
+  ) %>%
   group_by(year) %>%
   slice_sample(n = ceiling(validation_n_dismissal / n_distinct(llm_data_dismissal$year))) %>%
   ungroup() %>%
@@ -160,7 +162,10 @@ write_xlsx(validation_template_dismissal, "data/validation_dismissal_template.xl
 ### stay_vacate validation ###
 set.seed(105)
 validation_sample_stay_vacate <- llm_data_stay_vacate %>%
-  mutate(year = year(stay_vacate_file_date)) %>%
+  mutate(
+    stay_vacate_file_date = as.Date(stay_vacate_file_date),
+    year = year(stay_vacate_file_date)
+  ) %>%
   group_by(year) %>%
   slice_sample(n = ceiling(validation_n_stay_vacate / n_distinct(llm_data_stay_vacate$year))) %>%
   ungroup() %>%
@@ -181,21 +186,20 @@ write_xlsx(validation_template_stay_vacate, "data/validation_stay_vacate_templat
 ### appearance validation ###
 set.seed(106)
 validation_sample_appearance <- llm_data_appearance %>%
-  mutate(year = year(appearance_file_date)) %>%
+  mutate(year = year(document_file_date)) %>%
   group_by(year) %>%
   slice_sample(n = ceiling(validation_n_appearance / n_distinct(llm_data_appearance$year))) %>%
   ungroup() %>%
   slice_head(n = validation_n_appearance)
 
 validation_template_appearance <- validation_sample_appearance %>%
-  select(row_id, document, case_number, appearance_file_date, side_appeared) %>%
+  select(row_id, document, case_number, document_file_date, appearance_for) %>%
   mutate(
-    side_appeared_manual = NA_character_,
+    appearance_for_manual = NA_character_,
     notes = NA_character_
   ) %>%
   rename(
-    side_appeared_extracted = side_appeared
+    appearance_for_extracted = appearance_for
   )
 
 write_xlsx(validation_template_appearance, "data/validation_appearance_template.xlsx")
-
