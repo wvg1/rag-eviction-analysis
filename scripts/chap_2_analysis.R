@@ -329,7 +329,6 @@ fit_year_models <- function(data, outcome, predictors) {
 #shared base predictors
 base_predictors <- c(
   "I(address_city == 'Tacoma')",
-  "log(pmax(amount_owed, 1))",
   "I(is.na(amount_owed) | amount_owed == 0)",
   "plaintiff_rep",
   "low_income"
@@ -339,7 +338,7 @@ base_predictors <- c(
 appearance_models <- fit_year_models(
   final_merged_data,
   outcome    = "defendant_appearance",
-  predictors = c(base_predictors, "drive_time_mins")
+  predictors = c(base_predictors, "drive_time_mins", "transit_time_mins")
 )
 
 modelsummary(
@@ -367,7 +366,7 @@ modelsummary(
 attendance_models <- fit_year_models(
   final_merged_data %>% filter(hearing_held == TRUE),
   outcome    = "defendant_hearing_attendance",
-  predictors = c(base_predictors, "drive_time_mins", "defendant_appearance")
+  predictors = c(base_predictors, "drive_time_mins", "transit_time_mins", "defendant_appearance")
 )
 
 modelsummary(
