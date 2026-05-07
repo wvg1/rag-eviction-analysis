@@ -107,6 +107,14 @@ final_merged_data <- final_merged_data %>%
 cat("Cases with amount_owed after imputation:", sum(!is.na(final_merged_data$amount_owed)), "\n")
 cat("Cases with amount_owed = 0 (non-monetary):", sum(final_merged_data$amount_owed == 0), "\n")
 
+#remove cases missing low_income designation
+final_merged_data <- final_merged_data %>%
+  filter(!is.na(low_income))
+
+#confirm removal
+cat("Cases after removing missing low_income:", nrow(final_merged_data), "\n")
+cat("Cases removed:", 8380 - nrow(final_merged_data), "\n")
+
 ### accuracy ###
 
 #load verified data
