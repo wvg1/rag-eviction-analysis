@@ -100,6 +100,13 @@ final_merged_data %>%
   count(low_income) %>%
   mutate(pct = round(n / sum(n) * 100, 1))
 
+#impute missing amount owed
+final_merged_data <- final_merged_data %>%
+  mutate(amount_owed = replace_na(amount_owed, 0))
+
+cat("Cases with amount_owed after imputation:", sum(!is.na(final_merged_data$amount_owed)), "\n")
+cat("Cases with amount_owed = 0 (non-monetary):", sum(final_merged_data$amount_owed == 0), "\n")
+
 ### accuracy ###
 
 #load verified data
