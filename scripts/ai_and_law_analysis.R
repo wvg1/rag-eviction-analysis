@@ -1,5 +1,5 @@
 ### analysis for AI and Law manuscript ###
-### reproduces Figures 2, 3, and 4 ###
+### reproduces Figures 2, 3, and 4 in Times New Roman ###
 
 # ---- setup ----------------------------------------------------------------
 # set working directory depending on context
@@ -13,6 +13,27 @@ library(ggplot2)
 library(scales)
 
 dir.create("figs", showWarnings = FALSE)
+
+# ---- font setup -----------------------------------------------------------
+# Figures are drawn in Times New Roman. The ggsave() calls below use the
+# `ragg` device, which reads fonts installed on your system *by name*. On
+# Windows and macOS "Times New Roman" is already installed, so this works with
+# no extra steps -- just install ragg once:  install.packages("ragg")
+base_family <- "Times New Roman"
+
+# If Times New Roman is NOT available on your machine (common on Linux or in a
+# reproducible/CI build), use a metric-compatible substitute -- visually and
+# dimensionally identical to TNR. Pick ONE:
+#
+#   (a) Liberation Serif (ships with LibreOffice); if installed, just set:
+#         base_family <- "Liberation Serif"
+#
+#   (b) Tinos (Google's TNR clone) via showtext -- registers under the TNR
+#       name so nothing else in the script changes:
+#         library(showtext)
+#         font_add_google("Tinos", family = "Times New Roman")
+#         showtext_auto(); showtext_opts(dpi = 300)
+#       (with showtext active you can drop `device = ragg::agg_png` below)
 
 # ---- read + clean ---------------------------------------------------------
 df <- readRDS("data/final_merged_data.rds") |>
@@ -46,7 +67,8 @@ df <- readRDS("data/final_merged_data.rds") |>
 pal <- c(response = "#2C6E91", hearing = "#E08214", attendance = "#5AAE61",
          tacoma = "#B2182B", elsewhere = "#4D4D4D", filings = "#C9D6DE")
 
-theme_eviction <- theme_minimal(base_size = 12) +
+# base_family flows into every text element via theme_minimal(base_family=)
+theme_eviction <- theme_minimal(base_size = 12, base_family = base_family) +
   theme(
     plot.title         = element_text(face = "bold", size = rel(1.15)),
     plot.subtitle      = element_text(color = "grey35", margin = margin(b = 10)),
@@ -94,7 +116,8 @@ fig2 <- ggplot(monthly, aes(file_month)) +
        caption = "Bars: monthly filing volume. Lines: share of the month's cases reaching each checkpoint.") +
   theme_eviction
 
-ggsave("figs/figure2_filings_procedural.png", fig2, width = 10, height = 6, dpi = 200, bg = "white")
+ggsave("figs/figure2_filings_procedural.png", fig2,
+       width = 10, height = 6, dpi = 300, bg = "white", device = ragg::agg_png)
 
 # ===========================================================================
 # Figure 3: Default eviction judgments in cases with no hearing
@@ -107,7 +130,7 @@ monthly_def <- df |>
 fig3_monthly <- ggplot(monthly_def, aes(file_month, default_rate, color = location)) +
   geom_vline(xintercept = as.Date("2023-10-01"), linetype = "dashed", color = "grey60") +
   annotate("text", x = as.Date("2023-10-01"), y = 0.52, label = "Oct 2023",
-           hjust = -0.1, size = 3.2, color = "grey45") +
+           hjust = -0.1, size = 3.2, color = "grey45", family = base_family) +
   geom_line(alpha = 0.35, linewidth = 0.5) +
   geom_smooth(se = FALSE, method = "loess", span = 0.5, linewidth = 1.1) +
   scale_color_manual(values = unname(pal[c("elsewhere", "tacoma")])) +
@@ -121,7 +144,7 @@ fig3_monthly <- ggplot(monthly_def, aes(file_month, default_rate, color = locati
   theme_eviction
 
 ggsave("figs/figure3_default_judgments_monthly.png", fig3_monthly,
-       width = 10, height = 6, dpi = 200, bg = "white")
+       width = 10, height = 6, dpi = 300, bg = "white", device = ragg::agg_png)
 
 # (b) compact yearly summary (reproduces the paper's headline numbers)
 yearly_def <- df |>
@@ -131,7 +154,8 @@ yearly_def <- df |>
 fig3_yearly <- ggplot(yearly_def, aes(year, default_rate, fill = location)) +
   geom_col(position = position_dodge(0.7), width = 0.65) +
   geom_text(aes(label = percent(default_rate, accuracy = 0.1)),
-            position = position_dodge(0.7), vjust = -0.4, size = 3.3, color = "grey20") +
+            position = position_dodge(0.7), vjust = -0.4, size = 3.3,
+            color = "grey20", family = base_family) +
   scale_fill_manual(values = unname(pal[c("elsewhere", "tacoma")])) +
   scale_y_continuous(labels = percent_format(accuracy = 1),
                      limits = c(0, NA), expand = expansion(c(0, 0.12))) +
@@ -141,7 +165,7 @@ fig3_yearly <- ggplot(yearly_def, aes(year, default_rate, fill = location)) +
   theme_eviction
 
 ggsave("figs/figure3_default_judgments_yearly.png", fig3_yearly,
-       width = 8, height = 5.5, dpi = 200, bg = "white")
+       width = 8, height = 5.5, dpi = 300, bg = "white", device = ragg::agg_png)
 
 # ===========================================================================
 # Figure 4: Representation rates by status of written responses
@@ -161,7 +185,8 @@ rep_df <- bind_rows(rep_by_year, rep_overall) |>
 fig4 <- ggplot(rep_df, aes(year, rep_rate, fill = response_status)) +
   geom_col(position = position_dodge(0.72), width = 0.66) +
   geom_text(aes(label = percent(rep_rate, accuracy = 1)),
-            position = position_dodge(0.72), vjust = -0.4, size = 3.3, color = "grey20") +
+            position = position_dodge(0.72), vjust = -0.4, size = 3.3,
+            color = "grey20", family = base_family) +
   scale_fill_manual(values = c("No response" = "#BCC4CC",
                                "Submitted response" = unname(pal["response"]))) +
   scale_y_continuous(labels = percent_format(accuracy = 1),
@@ -171,6 +196,5 @@ fig4 <- ggplot(rep_df, aes(year, rep_rate, fill = response_status)) +
        x = NULL, y = "Received legal representation") +
   theme_eviction
 
-ggsave("figs/figure4_representation.png", fig4, width = 8.5, height = 5.5, dpi = 200, bg = "white")
-
-message("Done. Four PNGs written to figs/.")
+ggsave("figs/figure4_representation.png", fig4,
+       width = 8.5, height = 5.5, dpi = 300, bg = "white", device = ragg::agg_png)
