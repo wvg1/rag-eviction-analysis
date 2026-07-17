@@ -113,7 +113,7 @@ fig2 <- ggplot(monthly, aes(file_month)) +
   scale_color_manual(values = unname(pal[c("response", "hearing", "attendance")])) +
   labs(title = "Eviction filings and procedural outcomes",
        subtitle = "Pierce County, WA residential eviction cases, 2022\u20132024", x = NULL,
-       caption = "Bars: monthly filing volume. Lines: share of the month's cases reaching each checkpoint.") +
+       caption = "Bars represent monthly case filing counts. Lines represent the share of the month's cases reaching each checkpoint.") +
   theme_eviction
 
 ggsave("figs/figure2_filings_procedural.png", fig2,
@@ -132,7 +132,6 @@ fig3_monthly <- ggplot(monthly_def, aes(file_month, default_rate, color = locati
   annotate("text", x = as.Date("2023-10-01"), y = 0.52, label = "Oct 2023",
            hjust = -0.1, size = 3.2, color = "grey45", family = base_family) +
   geom_line(alpha = 0.35, linewidth = 0.5) +
-  geom_smooth(se = FALSE, method = "loess", span = 0.5, linewidth = 1.1) +
   scale_color_manual(values = unname(pal[c("elsewhere", "tacoma")])) +
   scale_y_continuous(labels = percent_format(accuracy = 1),
                      limits = c(0, NA), expand = expansion(c(0, 0.05))) +
@@ -140,7 +139,7 @@ fig3_monthly <- ggplot(monthly_def, aes(file_month, default_rate, color = locati
   labs(title = "Default eviction judgments in cases with no hearing",
        subtitle = "Share of cases with an eviction judgment entered and no hearing held",
        x = NULL, y = "Share of all cases",
-       caption = "Thin lines: monthly rate. Thick lines: smoothed trend. Dashed line marks Oct 2023.") +
+       caption = "Thin lines represent the monthly rate. Dashed line marks Oct 2023.") +
   theme_eviction
 
 ggsave("figs/figure3_default_judgments_monthly.png", fig3_monthly,
