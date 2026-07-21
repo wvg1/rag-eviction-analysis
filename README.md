@@ -1,8 +1,8 @@
-# Multimodal RAG pipeline for extracting eviction case outcomes from court documents
+# Document-conditioned LLM pipeline for extracting eviction case outcomes from court documents
 
 ## Project summary
 
-This project builds a scalable retrieval-augmented generation (RAG) pipeline to extract structured behavioral and legal outcome measures from unstructured eviction court documents.
+This project builds a scalable analytic pipeline to extract structured behavioral and legal outcome measures from unstructured eviction court documents.
 
 The pipeline processes approximately **195,000 PDFs across 8,000+ eviction cases** filed in Pierce County, Washington (2022–2024). These documents contain critical information about tenant behavior, legal representation, procedural events, and case outcomes that are not captured in administrative datasets.
 
