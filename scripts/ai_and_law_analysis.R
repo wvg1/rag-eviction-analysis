@@ -36,12 +36,32 @@ base_family <- "Times New Roman"
 #       (with showtext active you can drop `device = ragg::agg_png` below)
 
 # ---- read + clean ---------------------------------------------------------
+# Analytic sample matches the manuscript's methods section (and the
+# dissertation chapter 2 analysis): drop the 88 commercial cases, then drop
+# the 46 residential cases with missing address data or an address geocoded
+# outside Pierce County, leaving n = 8,380. "Geocoded within the county" is
+# operationalized as having a 2020 Census block group from the spatial join
+# plus not being one of the manually identified out-of-county addresses.
+# Note: 24-2-06096-6 (Milton, King County portion) is retained -- the case was
+# filed and adjudicated in Pierce County Superior Court.
+out_of_county_cases <- c(
+  "22-2-07206-2",  # Auburn
+  "22-2-09620-4",  # Seattle
+  "23-2-05570-1",  # Yelm
+  "23-2-05739-8",  # Clinton
+  "23-2-07405-5",  # Tumwater
+  "24-2-05674-8",  # Auburn
+  "24-2-07646-3",  # Kent
+  "24-2-09155-1"   # Arlington
+)
+
 df <- readRDS("data/final_merged_data.rds") |>
   as_tibble() |>
   # residential cases only (drop the 88 commercial cases)
   filter(!commercial_flag) |>
-  # require a valid geocode so each case can be placed in/outside Tacoma
-  filter(!is.na(lat), !is.na(lon)) |>
+  # geocoded to a valid location within Pierce County (drops 46 cases)
+  filter(!is.na(census_block_group),
+         !case_number %in% out_of_county_cases) |>
   mutate(
     # Tacoma indicator, robust to stray whitespace/case in the city field
     location = factor(
@@ -62,6 +82,10 @@ df <- readRDS("data/final_merged_data.rds") |>
     response_status  = factor(if_else(responded, "Submitted response", "No response"),
                               levels = c("No response", "Submitted response"))
   )
+
+# confirm the sample matches the manuscript
+stopifnot(nrow(df) == 8380)
+cat("Analytic sample:", nrow(df), "residential cases\n")
 
 # ---- shared styling -------------------------------------------------------
 pal <- c(response = "#2C6E91", hearing = "#E08214", attendance = "#5AAE61",
