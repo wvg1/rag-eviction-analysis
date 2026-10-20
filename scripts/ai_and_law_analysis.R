@@ -1,10 +1,7 @@
-### analysis for AI and Law manuscript ###
-### reproduces Figures 2, 3, and 4 in Times New Roman ###
+### run after chap_2_analysis.R
+### reproduces figures 2, 3, and 4 for the AI and Law manuscript in Times New Roman
 
-# ---- setup ----------------------------------------------------------------
-# set working directory depending on context
-setwd("rag-eviction-analysis")
-
+#load packages
 library(dplyr)
 library(tidyr)
 library(lubridate)
@@ -14,68 +11,45 @@ library(scales)
 
 dir.create("figs", showWarnings = FALSE)
 
-# ---- font setup -----------------------------------------------------------
-# Figures are drawn in Times New Roman. The ggsave() calls below use the
-# `ragg` device, which reads fonts installed on your system *by name*. On
-# Windows and macOS "Times New Roman" is already installed, so this works with
-# no extra steps -- just install ragg once:  install.packages("ragg")
+#font — ragg reads installed system fonts by name, so this works on mac/windows
+#if TNR isn't installed (linux), swap in "Liberation Serif" or register Tinos via showtext
 base_family <- "Times New Roman"
 
-# If Times New Roman is NOT available on your machine (common on Linux or in a
-# reproducible/CI build), use a metric-compatible substitute -- visually and
-# dimensionally identical to TNR. Pick ONE:
-#
-#   (a) Liberation Serif (ships with LibreOffice); if installed, just set:
-#         base_family <- "Liberation Serif"
-#
-#   (b) Tinos (Google's TNR clone) via showtext -- registers under the TNR
-#       name so nothing else in the script changes:
-#         library(showtext)
-#         font_add_google("Tinos", family = "Times New Roman")
-#         showtext_auto(); showtext_opts(dpi = 300)
-#       (with showtext active you can drop `device = ragg::agg_png` below)
-
-# ---- read + clean ---------------------------------------------------------
-# Figures are drawn on the same analytic sample as every table and model in
-# the manuscript: data/analytic_sample.rds, written by chap_2_analysis.R.
-# That script starts from final_merged_data.rds (8,514 cases) and drops the
-# 88 commercial cases, 46 residential cases with missing address data or an
-# address geocoded outside Pierce County, and 146 cases in block groups with
-# no ACS median household income estimate, leaving n = 8,234.
-# (24-2-06096-6, in the King County portion of Milton, is dropped at the ACS
-# step because it has no Pierce County ACS record.)
+#load data
+#analytic_sample.rds is written by chap_2_analysis.R so figures are drawn on the
+#same 8,234 cases as the tables and models (8,514 cases minus 88 commercial,
+#46 missing/out-of-county addresses, and 146 with no ACS median income)
 df <- readRDS("data/analytic_sample.rds") |>
   as_tibble() |>
   mutate(
-    # Tacoma indicator, robust to stray whitespace/case in the city field
+    #tacoma indicator
     location = factor(
       if_else(str_to_lower(str_trim(address_city)) == "tacoma",
               "Tacoma", "Outside Tacoma"),
       levels = c("Outside Tacoma", "Tacoma")
     ),
-    # time helpers
+    #time helpers
     file_date  = as.Date(file_date),
     file_month = floor_date(file_date, "month"),
     year       = factor(year, levels = c("2022", "2023", "2024")),
-    # readable outcome names (reconciled *_final variables, as in the paper)
+    #readable outcome names (uses the reconciled *_final variables)
     responded        = defendant_appearance,
     hearing          = hearing_held,
     attended         = defendant_hearing_attendance,
     represented      = defendant_rep_merged,
-    default_judgment = writ_final & !hearing_held,        # judgment, no hearing
+    default_judgment = writ_final & !hearing_held,        #judgment with no hearing
     response_status  = factor(if_else(responded, "Submitted response", "No response"),
                               levels = c("No response", "Submitted response"))
   )
 
-# confirm the sample matches the manuscript
+#confirm n matches the paper
 stopifnot(nrow(df) == 8234)
 cat("Analytic sample:", nrow(df), "residential cases\n")
 
-# ---- shared styling -------------------------------------------------------
+#shared styling
 pal <- c(response = "#2C6E91", hearing = "#E08214", attendance = "#5AAE61",
          tacoma = "#B2182B", elsewhere = "#4D4D4D", filings = "#C9D6DE")
 
-# base_family flows into every text element via theme_minimal(base_family=)
 theme_eviction <- theme_minimal(base_size = 12, base_family = base_family) +
   theme(
     plot.title         = element_text(face = "bold", size = rel(1.15)),
@@ -89,9 +63,7 @@ theme_eviction <- theme_minimal(base_size = 12, base_family = base_family) +
     plot.margin        = margin(15, 20, 15, 15)
   )
 
-# ===========================================================================
-# Figure 2: Eviction filings and procedural outcomes
-# ===========================================================================
+#figure 2: eviction filings and procedural outcomes
 monthly <- df |>
   group_by(file_month) |>
   summarise(filings = n(),
@@ -100,7 +72,8 @@ monthly <- df |>
             attendance = mean(attended),
             .groups = "drop")
 
-max_filings <- max(monthly$filings)  # scale factor for the secondary axis
+#scale factor for the secondary axis
+max_filings <- max(monthly$filings)
 
 rate_long <- monthly |>
   select(file_month, response, hearing, attendance) |>
@@ -127,10 +100,8 @@ fig2 <- ggplot(monthly, aes(file_month)) +
 ggsave("figs/figure2_filings_procedural.png", fig2,
        width = 10, height = 6, dpi = 300, bg = "white", device = ragg::agg_png)
 
-# ===========================================================================
-# Figure 3: Default eviction judgments in cases with no hearing
-# ===========================================================================
-# (a) monthly trend, Tacoma vs. elsewhere
+#figure 3: default eviction judgments in cases with no hearing
+#monthly trend, tacoma vs elsewhere
 monthly_def <- df |>
   group_by(location, file_month) |>
   summarise(default_rate = mean(default_judgment), .groups = "drop")
@@ -153,7 +124,7 @@ fig3_monthly <- ggplot(monthly_def, aes(file_month, default_rate, color = locati
 ggsave("figs/figure3_default_judgments_monthly.png", fig3_monthly,
        width = 10, height = 6, dpi = 300, bg = "white", device = ragg::agg_png)
 
-# (b) compact yearly summary (reproduces the paper's headline numbers)
+#yearly summary (numbers quoted in the paper text)
 yearly_def <- df |>
   group_by(year, location) |>
   summarise(default_rate = mean(default_judgment), .groups = "drop")
@@ -174,9 +145,7 @@ fig3_yearly <- ggplot(yearly_def, aes(year, default_rate, fill = location)) +
 ggsave("figs/figure3_default_judgments_yearly.png", fig3_yearly,
        width = 8, height = 5.5, dpi = 300, bg = "white", device = ragg::agg_png)
 
-# ===========================================================================
-# Figure 4: Representation rates by status of written responses
-# ===========================================================================
+#figure 4: representation rates by written response status
 rep_by_year <- df |>
   group_by(year, response_status) |>
   summarise(rep_rate = mean(represented), .groups = "drop")
