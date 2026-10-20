@@ -415,6 +415,40 @@ modelsummary(
   fmt       = 3
 )
 
+#appendix table: representation models without hearing attendance
+#attendance is recorded for tenant or counsel, so it overlaps w representation
+#(90% of represented tenants are coded as attending). re-estimate w response only,
+#and w hearing_held in place of attendance since that doesn't depend on who showed up
+final_merged_data %>%
+  summarise(
+    n_rep               = sum(defendant_rep_merged),
+    n_attend            = sum(defendant_hearing_attendance),
+    rep_and_attend      = sum(defendant_rep_merged & defendant_hearing_attendance),
+    rep_no_hearing      = sum(defendant_rep_merged & !hearing_held),
+    rep_hearing_no_att  = sum(defendant_rep_merged & hearing_held & !defendant_hearing_attendance),
+    attend_no_rep       = sum(defendant_hearing_attendance & !defendant_rep_merged),
+    pct_attend_if_rep   = mean(defendant_hearing_attendance[defendant_rep_merged]) * 100
+  )
+
+rep_models_response_only <- fit_year_models(
+  final_merged_data,
+  outcome    = "defendant_rep_merged",
+  predictors = c(base_predictors, "defendant_appearance")
+)
+
+rep_models_hearing_held <- fit_year_models(
+  final_merged_data,
+  outcome    = "defendant_rep_merged",
+  predictors = c(base_predictors, "defendant_appearance", "hearing_held")
+)
+
+modelsummary(
+  c(rep_models_response_only, rep_models_hearing_held),
+  stars     = c("*" = 0.05, "**" = 0.01, "***" = 0.001),
+  statistic = "std.error",
+  fmt       = 3
+)
+
 #outcome model predictors
 outcome_predictors <- c(
   base_predictors,
