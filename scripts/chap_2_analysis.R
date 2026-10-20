@@ -88,8 +88,8 @@ cat("\nMedian income summary:\n")
 print(summary(final_merged_data$median_income))
 
 #define low-income indicator
-#threshold: below 80% of Pierce County area median income (AMI)
-#2020 Pierce County AMI = $90,100 (HUD); 80% AMI = $72,080
+#threshold: below 50% of Pierce County area median income (AMI), as in the paper
+#2020 Pierce County AMI = $90,100 (HUD); 50% AMI = $45,050
 ami_threshold <- 45050
 
 final_merged_data <- final_merged_data %>%
@@ -346,9 +346,15 @@ fit_year_models <- function(data, outcome, predictors) {
 }
 
 #shared base predictors
+#monetary_complaint is TRUE when the complaint alleges arrears > 0 (amount_owed
+#was imputed to 0 for non-monetary cases above), so the coefficient reads
+#directly as "monetary vs. non-monetary", matching the row label in the paper
+final_merged_data <- final_merged_data %>%
+  mutate(monetary_complaint = amount_owed > 0)
+
 base_predictors <- c(
   "I(address_city == 'Tacoma')",
-  "I(is.na(amount_owed) | amount_owed == 0)",
+  "monetary_complaint",
   "plaintiff_rep",
   "low_income"
 )
