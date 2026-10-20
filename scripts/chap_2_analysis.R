@@ -115,6 +115,10 @@ final_merged_data <- final_merged_data %>%
 cat("Cases after removing missing low_income:", nrow(final_merged_data), "\n")
 cat("Cases removed:", 8380 - nrow(final_merged_data), "\n")
 
+#save the final analytic sample so downstream scripts (e.g. ai_and_law_analysis.R)
+#draw figures on exactly the same cases as the tables and models
+saveRDS(final_merged_data, "data/analytic_sample.rds")
+
 ### accuracy ###
 
 #load verified data
