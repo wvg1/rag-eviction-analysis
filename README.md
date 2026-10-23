@@ -111,6 +111,6 @@ Working papers and extended abstracts are being prepared for dissemination in co
 
 ---
 
-## Notes on eata access
+## Notes on data access
 
 Court documents are not included due to privacy and legal restrictions. This repository focuses on the processing architecture and analytical methods.
